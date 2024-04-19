@@ -15,6 +15,7 @@ defmodule Pandora.Processor do
 
     if Pandora.Cache.insert_new(url_s) do
       Logger.debug("Processing #{msg.data}")
+
       with {:ok, %{body: body}} <- Req.get(url_s, headers: @headers),
            {:ok, links} <- parse_body(body),
            parsed_links <- parse_links(url, links) do
@@ -62,6 +63,7 @@ defmodule Pandora.Processor do
 
   defp parse_parent_url(url) do
     url = URI.parse(url)
+
     cond do
       url.path == nil -> url
       url.path == "/" -> %{url | path: nil}
