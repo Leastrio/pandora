@@ -12,10 +12,10 @@ defmodule Pandora do
         concurrency: 1
       ],
       processors: [
-        default: [concurrency: 8]
+        default: [concurrency: 10]
       ],
       batchers: [
-        default: [batch_size: 1, concurrency: 1]
+        default: [batch_size: 5, concurrency: 1]
       ]
     )
   end
@@ -31,30 +31,31 @@ defmodule Pandora do
     case Pandora.Processor.process(msg) do
       {:ok, res} -> msg |> Broadway.Message.put_data(res)
       {:error, reason} -> msg |> Broadway.Message.failed(reason)
+      :noop -> msg |> Broadway.Message.put_data(:noop)
     end
   end
 
-
-  # TODO: Implement adding sites to a database table so that future requests do not resolve
   def handle_batch(_, msgs, _, _) do
     Enum.each(msgs, fn msg ->
-      {parent, children} = msg.data
+      if msg.data != :noop do
+        {parent, children} = msg.data
 
-      # TODO: Fix urls being added twice to db
-      %Pandora.Schema.Entry{url: parent}
-      |> Pandora.Repo.insert()
+        %Pandora.Schema.Entry{url: parent}
+        |> Pandora.Repo.insert()
 
-      all = Pandora.Schema.Entry.get_all_matches(children)
-      Enum.filter(children, fn c -> c not in all end)
-      |> Enum.map(fn url -> Pandora.Queue.enqueue(url) end)
+        Enum.map(children, fn url -> Pandora.Queue.enqueue(url) end)
+      end
     end)
+
     msgs
   end
 
-  # TODO: Implement adding all failed websites to a database blacklisted table so that future requests do not resolve if they are in it
   def handle_failed(msgs, _) do
-    IO.puts("MESSAGES FAILED!!!")
-    IO.inspect(msgs)
+    Enum.each(msgs, fn msg ->
+      %Pandora.Schema.Invalid{url: msg.data}
+      |> Pandora.Repo.insert()
+    end)
+
     msgs
   end
 end

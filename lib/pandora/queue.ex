@@ -16,7 +16,7 @@ defmodule Pandora.Queue do
   defp dispatch_events(queue, 0, events) do
     {:noreply, Enum.reverse(events), {queue, 0}}
   end
-  
+
   defp dispatch_events(queue, demand, events) do
     case :queue.out(queue) do
       {{:value, event}, queue} -> dispatch_events(queue, demand - 1, [event | events])
@@ -25,7 +25,9 @@ defmodule Pandora.Queue do
   end
 
   def enqueue(link) do
-    {_, pid, _, _} = Supervisor.which_children(Pandora.Broadway.ProducerSupervisor) |> List.first()
+    {_, pid, _, _} =
+      Supervisor.which_children(Pandora.Broadway.ProducerSupervisor) |> List.first()
+
     GenStage.cast(pid, {:enqueue, link})
   end
 end

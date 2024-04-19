@@ -12,7 +12,7 @@
         };
 
         erlangVersion = "erlangR26";
-        elixirVersion = "elixir_1_15";
+        elixirVersion = "elixir_1_16";
 
         elixir = pkgs.beam.packages.${erlangVersion}.${elixirVersion};
         erlang = pkgs.beam.interpreters.${erlangVersion};

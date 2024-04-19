@@ -9,6 +9,7 @@ defmodule Pandora.Application do
   def start(_type, _args) do
     children = [
       Pandora.Repo,
+      Pandora.Cache,
       Pandora
     ]
 
