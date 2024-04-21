@@ -8,7 +8,6 @@ defmodule Pandora.Processor do
 
   @schemes ["https", "http", nil]
 
-  # TODO: respect robots.txt
   def process(msg) do
     url = parse_parent_url(msg.data)
     url_s = URI.to_string(url)
@@ -16,12 +15,15 @@ defmodule Pandora.Processor do
     if Pandora.Cache.insert_new(url_s) do
       Logger.debug("Processing #{msg.data}")
 
-      with {:ok, %{body: body}} <- Req.get(url_s, headers: @headers),
+      with :ok <- Pandora.Robots.check(url),
+           {:ok, %{body: body}} <- Req.get(url_s, headers: @headers),
            {:ok, links} <- parse_body(body),
            parsed_links <- parse_links(url, links) do
         {:ok, {url_s, parsed_links}}
       else
         {:error, :invalid_doc} -> {:error, "Body is not a valid HTML document"}
+        {:error, :robots_disallow} -> {:error, "Robots.txt disallows this url"}
+        {:error, :invalid} -> {:error, "Domain does not exist"}
         {:error, _} -> {:error, "Error while sending GET request to URL"}
       end
     else

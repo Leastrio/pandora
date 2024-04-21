@@ -10,6 +10,7 @@ defmodule Pandora.Application do
     children = [
       Pandora.Repo,
       Pandora.Cache,
+      Pandora.Robots,
       Pandora
     ]
 
